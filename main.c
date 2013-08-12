@@ -110,8 +110,8 @@ int main(void)
 	f_mount(0, &fatfs);
 
 	sb_init();
-	open_soundfont(&sf, "SF/GS.SF2");
-	emu8000_load_samples(&sf, "SF/GS.SF2");
+	open_soundfont(&sf, "SF/4GMGS.SF2");
+	emu8000_load_samples(&sf, "SF/4GMGS.SF2");
 	reg_soundfont(&sf);
 	bridge_init();
 

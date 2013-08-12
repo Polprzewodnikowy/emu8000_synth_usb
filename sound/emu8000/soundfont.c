@@ -14,38 +14,14 @@ UINT bytes;
 
 #define NEW(type, nums)	(type *)malloc(sizeof(type) * (nums))
 
-static int READCHUNK(chunk_t *vp, FIL *fd)
-{
-	if(f_read(fd, vp, 8, &bytes) != FR_OK)
-		return -1;
-	return 1;
-}
-
-static int READDW(uint32_t *vp, FIL *fd)
-{
-	if(f_read(fd, vp, 4, &bytes) != FR_OK)
-		return -1;
-	return 1;
-}
-
-static int READW(uint16_t *vp, FIL *fd)
-{
-	if(f_read(fd, vp, 2, &bytes) != FR_OK)
-		return -1;
-	return 1;
-}
-
-#define READSTR(var, fd)	f_read(fd, var, 20, &bytes)
-
-#define READID(var, fd)	f_read(fd, var, 4, &bytes)
-#define READB(var, fd)	f_read(fd, var, 1, &bytes)
-#define SKIPB(fd)		{uint8_t dummy[1]; f_read(fd, dummy, 1, &bytes);}
-#define SKIPW(fd)		{uint8_t dummy[2]; f_read(fd, dummy, 2, &bytes);}
-#define SKIPDW(fd)		{uint8_t dummy[4]; f_read(fd, dummy, 4, &bytes);}
+#define READID(var, fd)		READDW(var, fd)
+#define READB(var, fd)		f_read(fd, var, 1, &bytes)
+#define READW(var, fd)		f_read(fd, var, 2, &bytes)
+#define READDW(var, fd)		f_read(fd, var, 4, &bytes)
+#define READCHUNK(var, fd)	f_read(fd, var, 8, &bytes)
 
 static int getchunk(const char *id);
 static void process_chunk(int id, int s, SFInfo *sf, FIL *fd);
-static void load_sample_names(int size, SFInfo *sf, FIL *fd);
 static void load_preset_header(int size, SFInfo *sf, FIL *fd);
 static void load_inst_header(int size, SFInfo *sf, FIL *fd);
 static void load_bag(int size, FIL *fd, int *totalp, unsigned short **bufp);
@@ -59,9 +35,6 @@ enum {
 	INFO_ID, SDTA_ID, PDTA_ID,
 	/* info stuff */
 	IFIL_ID, ISNG_ID, IROM_ID, INAM_ID, IVER_ID, IPRD_ID, ICOP_ID,
-#ifdef tplussbk
-	ICRD_ID, IENG_ID, ISFT_ID, ICMT_ID,
-#endif
 	/* sample data stuff */
 	SNAM_ID, SMPL_ID,
 	/* preset stuff */
@@ -76,11 +49,8 @@ void load_soundfont(FIL *fd, SFInfo *sf)
 {
 	chunk_t chunk, subchunk;
 
-	READID(sf->sfhdr.riff, fd);
-	READDW(&sf->sfhdr.size, fd);
-	READID(sf->sfhdr.sfbk, fd);
+	f_lseek(fd, f_tell(fd) + 12); //RIFF, size, SFBK
 
-	sf->inrom = 1;
 	while(!f_eof(fd))
 	{
 		READID(chunk.id, fd);
@@ -110,7 +80,6 @@ int open_soundfont(SFInfo *sf, char *path)
 
 void free_soundfont(SFInfo *sf)
 {
-	free(sf->samplenames);
 	free(sf->presethdr);
 	free(sf->sampleinfo);
 	free(sf->insthdr);
@@ -118,8 +87,6 @@ void free_soundfont(SFInfo *sf)
 	free(sf->instbag);
 	free(sf->presetgen);
 	free(sf->instgen);
-	if(sf->sfname)
-		free(sf->sfname);
 	memset(sf, 0, sizeof(*sf));
 }
 
@@ -131,9 +98,6 @@ static int getchunk(const char *id)
 		int id;
 	} idlist[] = {
 		{"LIST", LIST_ID},
-#ifdef tplussbk
-		{"sfbk", SFBK_ID},
-#endif
 		{"INFO", INFO_ID},
 		{"sdta", SDTA_ID},
 		{"snam", SNAM_ID},
@@ -155,12 +119,6 @@ static int getchunk(const char *id)
 		{"INAM", INAM_ID},
 		{"IPRD", IPRD_ID},
 		{"ICOP", ICOP_ID},
-#ifdef tplussbk
-		{"ICRD", ICRD_ID},
-		{"IENG", IENG_ID},
-		{"ISFT", ISFT_ID},
-		{"ICMT", ICMT_ID},
-#endif
 	};
 
 	unsigned int i;
@@ -174,18 +132,6 @@ static int getchunk(const char *id)
 	return UNKN_ID;
 }
 
-static void load_sample_names(int size, SFInfo *sf, FIL *fd)
-{
-	int i;
-	sf->nrsamples = size / 20;
-	sf->samplenames = NEW(samplenames_t, sf->nrsamples);
-	for(i = 0; i < sf->nrsamples; i++)
-	{
-		READSTR(sf->samplenames[i].name, fd);
-		sf->samplenames[i].name[20] = 0;
-	}
-}
-
 static void load_preset_header(int size, SFInfo *sf, FIL *fd)
 {
 	int i;
@@ -193,15 +139,11 @@ static void load_preset_header(int size, SFInfo *sf, FIL *fd)
 	sf->presethdr = NEW(presethdr_t, sf->nrpresets);
 	for(i = 0; i < sf->nrpresets; i++)
 	{
-		READSTR(sf->presethdr[i].name, fd);
+		f_lseek(fd, f_tell(fd) + 20); //Preset name
 		READW(&sf->presethdr[i].preset, fd);
-		sf->presethdr[i].sub_preset = sf->presethdr[i].preset;
 		READW(&sf->presethdr[i].bank, fd);
-		sf->presethdr[i].sub_bank = sf->presethdr[i].bank;
 		READW(&sf->presethdr[i].bagNdx, fd);
-		SKIPDW(fd);	/* lib */
-		SKIPDW(fd);	/* genre */
-		SKIPDW(fd);	/* morph */
+		f_lseek(fd, f_tell(fd) + 12); //lib, genre, morph
 	}
 }
 
@@ -212,7 +154,7 @@ static void load_inst_header(int size, SFInfo *sf, FIL *fd)
 	sf->insthdr = NEW(insthdr_t, sf->nrinsts);
 	for(i = 0; i < sf->nrinsts; i++)
 	{
-		READSTR(sf->insthdr[i].name, fd);
+		f_lseek(fd, f_tell(fd) + 20); //Instrument name
 		READW(&sf->insthdr[i].bagNdx, fd);
 	}
 }
@@ -226,7 +168,7 @@ static void load_bag(int size, FIL *fd, int *totalp, unsigned short **bufp)
 	for(i = 0; i < size; i++)
 	{
 		READW(&buf[i], fd);
-		SKIPW(fd);	/* mod */
+		f_lseek(fd, f_tell(fd) + 2); //mod
 	}
 	*totalp = size;
 	*bufp = buf;
@@ -250,46 +192,23 @@ static void load_gen(int size, FIL *fd, int *totalp, genrec_t **bufp)
 static void load_sample_info(int size, SFInfo *sf, FIL *fd)
 {
 	int i;
-	if(sf->version > 1)
-	{
-		sf->nrinfos = size / 46;
-		sf->nrsamples = sf->nrinfos;
-		sf->sampleinfo = NEW(sampleinfo_t, sf->nrinfos);
-		sf->samplenames = NEW(samplenames_t, sf->nrsamples);
-	}else{
-		sf->nrinfos = size / 16;
-		sf->sampleinfo = NEW(sampleinfo_t, sf->nrinfos);
-	}
+
+	sf->nrinfos = size / 46;
+	sf->sampleinfo = NEW(sampleinfo_t, sf->nrinfos);
 
 	for(i = 0; i < sf->nrinfos; i++)
 	{
-		if(sf->version > 1)
-			READSTR(sf->samplenames[i].name, fd);
+		f_lseek(fd, f_tell(fd) + 20); //Sample names
 		READDW(&sf->sampleinfo[i].startsample, fd);
 		READDW(&sf->sampleinfo[i].endsample, fd);
 		READDW(&sf->sampleinfo[i].startloop, fd);
 		READDW(&sf->sampleinfo[i].endloop, fd);
-		if(sf->version > 1)
-		{
-			READDW(&sf->sampleinfo[i].samplerate, fd);
-			READB(&sf->sampleinfo[i].originalPitch, fd);
-			READB(&sf->sampleinfo[i].pitchCorrection, fd);
-			READW(&sf->sampleinfo[i].samplelink, fd);
-			READW(&sf->sampleinfo[i].sampletype, fd);
-		}else{
-			if(sf->sampleinfo[i].startsample == 0)
-				sf->inrom = 0;
-			sf->sampleinfo[i].startloop++;
-			sf->sampleinfo[i].endloop += 2;
-			sf->sampleinfo[i].samplerate = 44100;
-			sf->sampleinfo[i].originalPitch = 60;
-			sf->sampleinfo[i].pitchCorrection = 0;
-			sf->sampleinfo[i].samplelink = 0;
-			if(sf->inrom)
-				sf->sampleinfo[i].sampletype = 0x8001;
-			else
-				sf->sampleinfo[i].sampletype = 1;
-		}
+
+		READDW(&sf->sampleinfo[i].samplerate, fd);
+		READB(&sf->sampleinfo[i].originalPitch, fd);
+		READB(&sf->sampleinfo[i].pitchCorrection, fd);
+		f_lseek(fd, f_tell(fd) + 2); //Sample link
+		READW(&sf->sampleinfo[i].sampletype, fd);
 	}
 }
 
@@ -308,13 +227,7 @@ static void process_chunk(int id, int s, SFInfo *sf, FIL *fd)
 			switch(cid)
 			{
 			case IFIL_ID:
-				READW(&sf->version, fd);
-				READW(&sf->minorversion, fd);
-				break;
-			case INAM_ID:
-				sf->sfname = (char *)malloc(subchunk.size);
-				if(sf->sfname != NULL)
-					f_read(fd, sf->sfname, subchunk.size, &bytes);
+				f_lseek(fd, f_tell(fd) + 4); //Version, minor version
 				break;
 			default:
 				f_lseek(fd, f_tell(fd) + subchunk.size);
@@ -333,12 +246,7 @@ static void process_chunk(int id, int s, SFInfo *sf, FIL *fd)
 			switch(cid)
 			{
 			case SNAM_ID:
-				if(sf->version > 1)
-				{
-					f_lseek(fd, f_tell(fd) + subchunk.size);
-				}else{
-					load_sample_names(subchunk.size, sf, fd);
-				}
+				f_lseek(fd, f_tell(fd) + subchunk.size); //Sample names
 				break;
 			case SMPL_ID:
 				sf->samplepos = f_tell(fd);
@@ -363,7 +271,7 @@ static void process_chunk(int id, int s, SFInfo *sf, FIL *fd)
 			case PBAG_ID:
 				load_bag(subchunk.size, fd, &sf->nrpbags, &sf->presetbag);
 				break;
-			case PMOD_ID: /* ignored */
+			case PMOD_ID: //Ignored
 				f_lseek(fd, f_tell(fd) + subchunk.size);
 				break;
 			case PGEN_ID:
@@ -375,7 +283,7 @@ static void process_chunk(int id, int s, SFInfo *sf, FIL *fd)
 			case IBAG_ID:
 				load_bag(subchunk.size, fd, &sf->nribags, &sf->instbag);
 				break;
-			case IMOD_ID: /* ingored */
+			case IMOD_ID: //Ingored
 				f_lseek(fd, f_tell(fd) + subchunk.size);
 				break;
 			case IGEN_ID:

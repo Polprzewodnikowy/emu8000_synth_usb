@@ -547,11 +547,17 @@ void play_notes(uint8_t ch, uint8_t note, uint8_t vel)
 											pitch = round(pitch);
 											reg.initial_pitch = (uint16_t)pitch;
 
+											uint8_t vol;
+											if(settings.ovr[Initial_Attenuation])
+												vol = (settings.set[Initial_Attenuation] / 10.0) / 0.375;
+											else
+												vol = 0;
+
 											double vvel = vel / (127.0 / (10.0 - 1.0));
 											vvel = log10(1.0 + vvel);
 											double vcc = channel[ch].cc[7] / (127.0 / (10.0 - 1.0));
 											vcc = log10(1.0 + vcc);
-											reg.attenuation = 0xFF - (uint8_t)((((vvel * vcc) / 2.0) + 0.5) * 255.0);
+											reg.attenuation = (0xFF - (uint8_t)((((vvel * vcc) / 2.0) + 0.5) * 255.0)) + vol;
 
 											vc = emu8000_find_voice(voice);
 											voice[vc].reg = reg;
@@ -566,6 +572,7 @@ void play_notes(uint8_t ch, uint8_t note, uint8_t vel)
 											voice[vc].state = STATE_PLAYING;
 											emu8000_start_voice(vc, voice[vc].reg);
 											voice[vc].reg.initial_pitch = absolutepitch;
+											voice[vc].vol = vol;
 										}
 									}
 									reset_enumerators(&inst_l);
@@ -723,7 +730,7 @@ void control_change(uint8_t ch, uint8_t cc, uint8_t val)
 					vvel = log10(1.0 + vvel);
 					double vcc = channel[ch].cc[7] / (127.0 / (10.0 - 1.0));
 					vcc = log10(1.0 + vcc);
-					voice[i].reg.attenuation = 0xFF - ((((vvel * vcc) / 2.0) + 0.5) * 255.0);
+					voice[i].reg.attenuation = (0xFF - ((((vvel * vcc) / 2.0) + 0.5) * 255.0)) + voice[i].vol;
 					emu8000_update_voice(i, voice[i].reg, SET_VOLUME);
 				}
 			}

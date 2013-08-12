@@ -21,10 +21,10 @@ enum {
 	LFO1_To_Pitch,
 	LFO2_To_Pitch,
 	Env1_To_Pitch,
-	Initial_Filter_Cutoff,	//FC
+	Initial_Filter_Cutoff,
 	Initial_Filter_Q,
-	LFO1_To_Filter_Cutoff,	//FC
-	Env1_To_Filter_Cutoff,	//FC
+	LFO1_To_Filter_Cutoff,
+	Env1_To_Filter_Cutoff,
 	End_Address_Coarse,
 	LFO1_To_Volume,
 	Env2_To_Volume,	//u1
@@ -76,59 +76,38 @@ enum {
 	End_Oper
 };
 
-typedef struct __attribute__ ((__packed__)) {
+typedef struct __attribute__ ((packed)) {
 	char id[4];
 	uint32_t size;
 } chunk_t;
 
-typedef struct __attribute__ ((__packed__)) {
-	char riff[4];	//RIFF
-	char sfbk[4];	//sfbk id
-	uint32_t size;	//size of sbk after there bytes
-} sfheader_t;
-
-typedef struct __attribute__ ((__packed__)) {
-	char name[21];
-} samplenames_t;
-
-typedef struct __attribute__ ((__packed__)) {
-	char name[20];
-	uint16_t preset, sub_preset, bank, sub_bank, bagNdx;
-	//int lib, genre, morphology;	//reserved
+typedef struct __attribute__ ((packed)) {
+	//char name[20];
+	uint16_t preset;
+	uint16_t bank;
+	uint16_t bagNdx;
 } presethdr_t;
 
-typedef struct __attribute__ ((__packed__)) {
+typedef struct __attribute__ ((packed)) {
 	uint32_t startsample, endsample;
 	uint32_t startloop, endloop;
-	uint32_t samplerate;	//ver.2 additional info
+	uint32_t samplerate;
 	uint8_t originalPitch;
 	uint8_t pitchCorrection;
-	uint16_t samplelink;
-	uint16_t sampletype;  //1 = mono, 2 = right, 4 = left, 8 = linked, 0x8000 = ROM
+	uint16_t sampletype;
 } sampleinfo_t;
 
-typedef struct __attribute__ ((__packed__)) {
-	char name[20];
+typedef struct __attribute__ ((packed)) {
 	uint16_t bagNdx;
 } insthdr_t;
 
-typedef struct __attribute__ ((__packed__)) {
+typedef struct __attribute__ ((packed)) {
 	uint8_t oper;
 	uint16_t amount;
 } genrec_t;
 
-typedef struct __attribute__ ((__packed__)) {
-	sfheader_t sfhdr;
-
-	char *sfname;
-
-	uint16_t version;
-	uint16_t minorversion;
-
-	int inrom;
-
-	int nrsamples;
-	samplenames_t *samplenames;
+typedef struct __attribute__ ((packed)) {
+//	uint16_t version;
 
 	int nrinfos;
 	sampleinfo_t *sampleinfo;
@@ -138,19 +117,15 @@ typedef struct __attribute__ ((__packed__)) {
 
 	int nrinsts;
 	insthdr_t *insthdr;
-
 	int nribags;
 	uint16_t *instbag;
-
 	int nrigens;
 	genrec_t *instgen;
 
 	int nrpresets;
 	presethdr_t *presethdr;
-
 	int nrpbags;
 	uint16_t *presetbag;
-
 	int nrpgens;
 	genrec_t *presetgen;
 } SFInfo;

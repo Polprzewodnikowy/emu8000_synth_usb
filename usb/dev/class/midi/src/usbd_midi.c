@@ -1,5 +1,5 @@
 /*
- * usbd_audio.c
+ * usbd_midi.c
  *
  *  Created on: 31-03-2013
  *      Author: Polprzewodnikowy

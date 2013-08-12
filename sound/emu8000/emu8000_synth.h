@@ -68,6 +68,7 @@ typedef struct {
 	uint8_t vel;
 	uint8_t exclusive_class;
 	uint8_t loop;
+	uint8_t vol;
 } emu8000_voice_t;
 
 void reset_regs(emu8000_reg_t *reg);
