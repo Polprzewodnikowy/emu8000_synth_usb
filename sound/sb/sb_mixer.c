@@ -102,8 +102,8 @@ void sbmix_set_eq(uint8_t tb, uint8_t lr, uint8_t val)
 void sbmix_init(void)
 {
 	sbmix_write(SBMIX_RESET, 0xFF);			//Reset mixer
-	sbmix_set_vol(SBMIX_MASTER_L, 26<<3);	//Load default settings
-	sbmix_set_vol(SBMIX_MASTER_R, 26<<3);
+	sbmix_set_vol(SBMIX_MASTER_L, 23<<3);	//Load default settings
+	sbmix_set_vol(SBMIX_MASTER_R, 23<<3);
 	sbmix_set_vol(SBMIX_VOICE_L, 0xFF);
 	sbmix_set_vol(SBMIX_VOICE_R, 0xFF);
 	sbmix_set_vol(SBMIX_MIDI_L, 0xFF);

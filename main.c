@@ -111,13 +111,18 @@ int main(void)
 
 	sb_init();
 	open_soundfont(&sf, "SF/4GMGS.SF2");
-	emu8000_load_samples(&sf, "SF/4GMGS.SF2");
 	reg_soundfont(&sf);
 	bridge_init();
 
 	USBD_Init(&USB_Dev, USB_OTG_FS_CORE_ID, &USR_desc, &MIDI_cb, &USR_cb);
 
-	while(1);
+	while(1)
+	{
+		if(GetKeys() == KEY1)
+		{
+			emu8000_load_samples(&sf, "SF/4GMGS.SF2");
+		}
+	}
 }
 
 /*

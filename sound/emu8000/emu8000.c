@@ -304,8 +304,8 @@ int emu8000_init(void)
 
 	int dram_size = emu8000_dram_check();
 
-	emu8000_update_equalizer(6, 9);
-	emu8000_update_chorus_mode(EMU8000_CHORUS_SHORTDELAY);
+	emu8000_update_equalizer(8, 9);
+	emu8000_update_chorus_mode(EMU8000_CHORUS_3);
 	emu8000_update_reverb_mode(EMU8000_REVERB_PLATE);
 
 	HWCF3_W(0x0004);

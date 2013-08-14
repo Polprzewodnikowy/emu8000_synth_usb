@@ -24,19 +24,19 @@ void isa_bus_init(void)
 	gpio_pin_cfg(G_ALE, P_ALE, GPIO_OUT_PP_100MHz);
 	gpio_pin_cfg(G_DIR, P_DIR, GPIO_OUT_PP_100MHz);
 	gpio_pin_cfg(G_IOCHRDY, P_IOCHRDY, GPIO_IN_PULL_UP);
-	gpio_pin_cfg(G_IRQ5, P_IRQ5, GPIO_IN_PULL_DOWN);
-	gpio_pin_cfg(G_DRQ5, P_DRQ5, GPIO_IN_FLOATING);
-	gpio_pin_cfg(G_DACK5, P_DACK5, GPIO_OUT_PP_100MHz);
-
-	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI2_PA;	//IRQ5 interrupt configuration / 0|2 = PA2
-	EXTI->PR |= (1<<P_IRQ5);
-	EXTI->RTSR |= (1<<P_IRQ5);
-	EXTI->IMR |= (1<<P_IRQ5);
-
-	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI1_PA;	//DRQ5 interrupt configuration / 0|1 = PA1
-	EXTI->PR |= (1<<P_DRQ5);
-	EXTI->RTSR |= (1<<P_DRQ5);
-	EXTI->IMR |= (1<<P_DRQ5);
+//	gpio_pin_cfg(G_IRQ5, P_IRQ5, GPIO_IN_PULL_DOWN);
+//	gpio_pin_cfg(G_DRQ5, P_DRQ5, GPIO_IN_FLOATING);
+//	gpio_pin_cfg(G_DACK5, P_DACK5, GPIO_OUT_PP_100MHz);
+//
+//	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI2_PA;	//IRQ5 interrupt configuration / 0|2 = PA2
+//	EXTI->PR |= (1<<P_IRQ5);
+//	EXTI->RTSR |= (1<<P_IRQ5);
+//	EXTI->IMR |= (1<<P_IRQ5);
+//
+//	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI1_PA;	//DRQ5 interrupt configuration / 0|1 = PA1
+//	EXTI->PR |= (1<<P_DRQ5);
+//	EXTI->RTSR |= (1<<P_DRQ5);
+//	EXTI->IMR |= (1<<P_DRQ5);
 
 	RESET_wbb = 1;
 	IOW_wbb = 1;
@@ -44,7 +44,7 @@ void isa_bus_init(void)
 	ALE_wbb = 0;
 	AEN_wbb = 0;
 	DIR_wbb = 0;
-	DACK5_wbb = 1;
+//	DACK5_wbb = 1;
 
 	delay_ms(20);
 

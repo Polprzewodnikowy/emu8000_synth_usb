@@ -64,8 +64,8 @@
 #define USBD_LANGID_STRING              0x415	//Polish, 0x409 - English(US)
 #define USBD_MANUFACTURER_STRING        (uint8_t *)"Polprzewodnikowy"
 
-#define USBD_PRODUCT_FS_STRING          (uint8_t *)"EMU8000 USB Synthesizer"
-#define USBD_PRODUCT_HS_STRING          (uint8_t *)"EMU8000 USB Synthesizer"
+#define USBD_PRODUCT_FS_STRING          (uint8_t *)"EMU8000 USB"
+#define USBD_PRODUCT_HS_STRING          (uint8_t *)"EMU8000 USB"
 #define USBD_SERIALNUMBER_FS_STRING     (uint8_t *)"00000000034E"
 #define USBD_SERIALNUMBER_HS_STRING     (uint8_t *)"00000000034F"
 

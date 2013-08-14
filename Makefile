@@ -38,7 +38,7 @@ LD_SCRIPT = STM32F4xxxG_rom.ld
 OUT_DIR = out
 
 # global definitions for C++, C and ASM (e.g. "symbol_with_value=0xDEAD symbol_without_value")
-GLOBAL_DEFS = STM32F4XX USE_USB_OTG_FS
+GLOBAL_DEFS = STM32F4XX USE_USB_OTG_FS USB_SUPPORT_USER_STRING_DESC
 
 # C++ definitions
 CXX_DEFS =

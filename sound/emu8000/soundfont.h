@@ -82,7 +82,6 @@ typedef struct __attribute__ ((packed)) {
 } chunk_t;
 
 typedef struct __attribute__ ((packed)) {
-	//char name[20];
 	uint16_t preset;
 	uint16_t bank;
 	uint16_t bagNdx;
@@ -107,8 +106,6 @@ typedef struct __attribute__ ((packed)) {
 } genrec_t;
 
 typedef struct __attribute__ ((packed)) {
-//	uint16_t version;
-
 	int nrinfos;
 	sampleinfo_t *sampleinfo;
 

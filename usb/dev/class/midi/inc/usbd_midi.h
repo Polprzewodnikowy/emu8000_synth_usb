@@ -23,4 +23,6 @@ extern const uint8_t MIDI_CIN_Size[];
 #define MIDI_SYSEX				0xF0
 #define MIDI_SYSEX_END			0xF7
 
+void usbd_midi_TxPacket(uint8_t interface, uint8_t cmd, uint8_t *data);
+
 #endif /* USBD_AUDIO_H_ */
