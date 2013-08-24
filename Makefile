@@ -51,7 +51,7 @@ AS_DEFS =
 
 # include directories (absolute or relative paths to additional folders with
 # headers, current folder is always included)
-INC_DIRS = fatfs inc isa_bus misc play sound/emu8000 sound/mpu401 sound/sb usb/dev/class/midi/inc usb/dev/core/inc usb/otg/inc
+INC_DIRS = fatfs inc isa_bus misc play sound/emu8000 sound/mpu401 sound/sb usb/dev/class/inc usb/dev/core/inc usb/otg/inc
 
 # library directories (absolute or relative paths to additional folders with
 # libraries)
@@ -63,7 +63,7 @@ LIBS = -lm
 
 # additional directories with source files (absolute or relative paths to
 # folders with source files, current folder is always included)
-SRCS_DIRS = fatfs isa_bus misc play sound/emu8000 sound/mpu401 sound/sb usb/dev/class/midi/src usb/dev/core/src usb/otg/src
+SRCS_DIRS = fatfs isa_bus misc play sound/emu8000 sound/mpu401 sound/sb usb/dev/class/src usb/dev/core/src usb/otg/src
 
 # extension of C++ files
 CXX_EXT = cpp
@@ -88,7 +88,7 @@ AS_SRCS = $(wildcard $(patsubst %, %/*.$(AS_EXT), . $(SRCS_DIRS)))
 
 # optimization flags ("-O0" - no optimization, "-O1" - optimize, "-O2" -
 # optimize even more, "-Os" - optimize for size or "-O3" - optimize yet more) 
-OPTIMIZATION = -O3
+OPTIMIZATION = -Os
 
 # set to 1 to optimize size by removing unused code and data during link phase
 REMOVE_UNUSED = 1

@@ -83,7 +83,7 @@ int emu8000_load_samples(SFInfo *sf, char *path)
 	for(int i = 0; i < EMU8000_DRAM_VOICES; i++)
 		emu8000_dma_chan(i, EMU8000_RAM_WRITE);
 	SMALW_W(EMU8000_DRAM_OFFSET);
-	while(f_tell(&sample_file) < sf->samplepos + sf->samplesize)
+	while(f_tell(&sample_file) < sf->samplepos + sf->samplesize || !f_eof(&sample_file))
 	{
 		f_read(&sample_file, &sample_buff, 2, &bytes);
 		emu8000_SMALW_wait();

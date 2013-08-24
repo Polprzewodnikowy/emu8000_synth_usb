@@ -54,9 +54,8 @@
   * @{
   */ 
 
-
 #define USBD_VID                        0x0483
-#define USBD_PID                        0x8000 //0x5730
+#define USBD_PID                        0x8000
 
 /** @defgroup USB_String_Descriptors
   * @{
@@ -66,8 +65,8 @@
 
 #define USBD_PRODUCT_FS_STRING          (uint8_t *)"EMU8000 USB"
 #define USBD_PRODUCT_HS_STRING          (uint8_t *)"EMU8000 USB"
-#define USBD_SERIALNUMBER_FS_STRING     (uint8_t *)"00000000034E"
-#define USBD_SERIALNUMBER_HS_STRING     (uint8_t *)"00000000034F"
+#define USBD_SERIALNUMBER_FS_STRING     (uint8_t *)"00000EMU8000"
+#define USBD_SERIALNUMBER_HS_STRING     (uint8_t *)"00000EMU8000"
 
 #define USBD_CONFIGURATION_FS_STRING    (uint8_t *)"MIDI Config"
 #define USBD_INTERFACE_FS_STRING        (uint8_t *)"MIDI Interface"

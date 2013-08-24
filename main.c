@@ -49,11 +49,14 @@
 #include "hdr/hdr_gpio.h"
 
 #include "gpio.h"
+#include "event.h"
 
 #include "misc/delay.h"
 #include "misc/keyb.h"
 #include "misc/spi.h"
 #include "misc/led.h"
+#include "misc/midiuart.h"
+#include "misc/usbcontrol.h"
 
 #include "fatfs/ff.h"
 #include "fatfs/diskio.h"
@@ -62,7 +65,7 @@
 #include "sound/emu8000/emu8000.h"
 #include "sound/emu8000/soundfont.h"
 
-#include <usbd_midi.h>
+#include <usbd_dev.h>
 #include <usbd_desc.h>
 #include <usbd_usr.h>
 #include <usb_bsp.h>
@@ -74,6 +77,8 @@
 */
 
 extern USB_OTG_CORE_HANDLE USB_Dev;
+//extern midi_ch_t channel[];
+//extern emu8000_voice_t voice[];
 SFInfo sf;
 
 /*
@@ -102,6 +107,7 @@ static void system_init(void);
 int main(void)
 {
 	FATFS fatfs;
+	event_t *ev;
 
 	fpu_enable();
 	system_init();
@@ -110,17 +116,56 @@ int main(void)
 	f_mount(0, &fatfs);
 
 	sb_init();
-	open_soundfont(&sf, "SF/4GMGS.SF2");
+	load_soundfont(&sf, "SF/4GMGS.SF2");
 	reg_soundfont(&sf);
 	bridge_init();
+	usart_midi_Init(31250);
 
-	USBD_Init(&USB_Dev, USB_OTG_FS_CORE_ID, &USR_desc, &MIDI_cb, &USR_cb);
+	USBD_Init(&USB_Dev, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_cb, &USR_cb);
 
 	while(1)
 	{
 		if(GetKeys() == KEY1)
-		{
 			emu8000_load_samples(&sf, "SF/4GMGS.SF2");
+
+		if(event_any())
+		{
+			ev = event_get();
+			switch(ev->type)
+			{
+				case EVENT_TYPE_MIDI:
+					switch(ev->buf[0] & 0xF0)
+					{
+						case MIDI_NOTE_OFF:
+							note_off(ev->buf[0] & 0x0F, ev->buf[1], ev->buf[2]);
+							break;
+						case MIDI_NOTE_ON:
+							note_on(ev->buf[0] & 0x0F, ev->buf[1], ev->buf[2]);
+							break;
+						case MIDI_AFTERTOUCH_POLY:
+							aftertouch_poly(ev->buf[0] & 0x0F, ev->buf[1], ev->buf[2]);
+							break;
+						case MIDI_CONTROL_CHANGE:
+							control_change(ev->buf[0] & 0x0F, ev->buf[1], ev->buf[2]);
+							break;
+						case MIDI_PITCH_BEND:
+							pitch_bend(ev->buf[0] & 0x0F, ev->buf[1], ev->buf[2]);
+							break;
+						case MIDI_PROGRAM_CHANGE:
+							program_change(ev->buf[0] & 0x0F, ev->buf[1]);
+							break;
+						case MIDI_AFTERTOUCH_CHAN:
+							aftertouch_chan(ev->buf[0] & 0x0F, ev->buf[1]);
+							break;
+					}
+					break;
+				case EVENT_TYPE_USB:
+					usbcontrol_process_data(ev->buf);
+					break;
+				case EVENT_TYPE_NULL:
+				default:
+					break;
+			}
 		}
 	}
 }
@@ -244,6 +289,7 @@ static uint32_t pll_start(uint32_t crystal, uint32_t frequency)
 
 static void system_init(void)
 {
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	gpio_init();
 	acc_off();	//Turn off interrupt lines in LIS302DL
 	delay_init();

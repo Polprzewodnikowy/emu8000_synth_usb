@@ -32,7 +32,7 @@ void isa_bus_init(void)
 //	EXTI->PR |= (1<<P_IRQ5);
 //	EXTI->RTSR |= (1<<P_IRQ5);
 //	EXTI->IMR |= (1<<P_IRQ5);
-//
+
 //	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI1_PA;	//DRQ5 interrupt configuration / 0|1 = PA1
 //	EXTI->PR |= (1<<P_DRQ5);
 //	EXTI->RTSR |= (1<<P_DRQ5);
@@ -55,7 +55,7 @@ void isa_bus_init(void)
 
 void isa_bus_out(uint16_t address, uint16_t data)
 {
-	__disable_irq();
+//	__disable_irq();
 	DIR_wbb = 1;
 	G_DATA->MODER = 0x55555555;	//Output
 	G_DATA->ODR = address;
@@ -63,17 +63,17 @@ void isa_bus_out(uint16_t address, uint16_t data)
 	ALE_wbb = 0;
 	G_DATA->ODR = data;
 	IOW_wbb = 0;
-	for(int i = 0; i < 20; i++)
+	for(int i = 0; i < 50; i++)
 		__asm volatile("nop");
 	while(!IOCHRDY_rbb);
 	IOW_wbb = 1;
-	__enable_irq();
+//	__enable_irq();
 	return;
 }
 
 uint16_t isa_bus_in(uint16_t address)
 {
-	__disable_irq();
+//	__disable_irq();
 	DIR_wbb = 1;
 	G_DATA->MODER = 0x55555555;	//Output
 	G_DATA->ODR = address;
@@ -82,11 +82,11 @@ uint16_t isa_bus_in(uint16_t address)
 	DIR_wbb = 0;
 	G_DATA->MODER = 0x00000000;	//Input
 	IOR_wbb = 0;
-	for(int i = 0; i < 20; i++)
+	for(int i = 0; i < 50; i++)
 		__asm volatile("nop");
 	while(!IOCHRDY_rbb);
 	uint16_t data = G_DATA->IDR;
 	IOR_wbb = 1;
-	__enable_irq();
+//	__enable_irq();
 	return data;
 }

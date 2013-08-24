@@ -7,11 +7,15 @@
 
 #include <string.h>
 #include "inc/stm32f4xx.h"
-#include "midiuart.h"
-#include "usbd_midi.h"
 #include "config.h"
 #include "gpio.h"
-#include "usbd_midi.h"
+#include "event.h"
+#include "midiuart.h"
+
+volatile uint8_t mubuf[4];
+volatile uint8_t mustatus = 0;
+volatile int muindex = 0;
+volatile int musysex_len = 0;	//TODO: Send SYSEX cmd
 
 void usart_midi_Init(uint32_t speed)
 {
@@ -78,73 +82,77 @@ void usart_midi_TxByte(uint8_t data)
 	USART2->SR &= ~USART_SR_TC;
 }
 
-void midiuart_process(uint8_t data)
+void midiuart_process(uint8_t mpdata)
 {
-	static uint8_t buf[16];
-	static uint8_t status = 0;
-	static int index = 0;
-	static int sysex_len = 0;
-
-	if(data == MIDI_CLOCK)
+	if(mpdata == MIDI_CLOCK)
 		return;
-	if(data == MIDI_ACTIVE_SENSING)
+	if(mpdata == MIDI_ACTIVE_SENSING)
 		return;
 
-	if(data & MIDI_STATUS_MASK)
+	if(mpdata & MIDI_STATUS_MASK)
 	{
-		sysex_len = index;
-		status = data;
-		index = 0;
-		if(status != MIDI_SYSEX_END)
+		musysex_len = muindex;
+		mustatus = mpdata;
+		muindex = 0;
+		if(mustatus != MIDI_SYSEX_END)
 		{
-			memset(buf, 0, 16);
+			memset((uint8_t *)mubuf, 0, 16);
 			return;
 		}
 	}
 
-	buf[index++] = data;
+	mubuf[muindex++] = mpdata;
 
-	switch(status & 0xF0)
+	switch(mustatus & 0xF0)
 	{
 		case MIDI_NOTE_OFF:
 		case MIDI_NOTE_ON:
 		case MIDI_AFTERTOUCH_POLY:
 		case MIDI_CONTROL_CHANGE:
 		case MIDI_PITCH_BEND:
-			if(index == 2)
+			if(muindex == 2)
 			{
-				usbd_midi_TxPacket(1, status, buf);
-				memset(buf, 0, 16);
-				index = 0;
+				event_t ev;
+				ev.type = EVENT_TYPE_MIDI;
+				ev.buf[0] = mustatus;
+				ev.buf[1] = mubuf[0];
+				ev.buf[2] = mubuf[1];
+				event_put(ev);
+				memset((uint8_t *)mubuf, 0, 16);
+				muindex = 0;
 			}
 			break;
 		case MIDI_PROGRAM_CHANGE:
 		case MIDI_AFTERTOUCH_CHAN:
-			if(index == 1)
+			if(muindex == 1)
 			{
-				usbd_midi_TxPacket(1, status, buf);
-				memset(buf, 0, 16);
-				index = 0;
+				event_t ev;
+				ev.type = EVENT_TYPE_MIDI;
+				ev.buf[0] = mustatus;
+				ev.buf[1] = mubuf[0];
+				event_put(ev);
+				memset((uint8_t *)mubuf, 0, 16);
+				muindex = 0;
 			}
 			break;
 		case 0xF0:
-			switch(status)
+			switch(mustatus)
 			{
 				case MIDI_SYSEX:
 					break;
 				case MIDI_SYSEX_END:
-					memset(buf, 0, 16);
-					index = 0;
+					memset((uint8_t *)mubuf, 0, 16);
+					muindex = 0;
 					break;
 				default:
-					memset(buf, 0, 16);
-					index = 0;
+					memset((uint8_t *)mubuf, 0, 16);
+					muindex = 0;
 					break;
 			}
 			break;
 		default:
-			memset(buf, 0, 16);
-			index = 0;
+			memset((uint8_t *)mubuf, 0, 16);
+			muindex = 0;
 			break;
 	}
 }

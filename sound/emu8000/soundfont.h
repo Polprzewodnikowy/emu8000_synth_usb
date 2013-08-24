@@ -76,12 +76,13 @@ enum {
 	End_Oper
 };
 
-typedef struct __attribute__ ((packed)) {
+typedef struct {
 	char id[4];
 	uint32_t size;
 } chunk_t;
 
 typedef struct __attribute__ ((packed)) {
+	char name[20];
 	uint16_t preset;
 	uint16_t bank;
 	uint16_t bagNdx;
@@ -106,11 +107,13 @@ typedef struct __attribute__ ((packed)) {
 } genrec_t;
 
 typedef struct __attribute__ ((packed)) {
-	int nrinfos;
-	sampleinfo_t *sampleinfo;
+	int *address;
 
 	uint32_t samplepos;
 	uint32_t samplesize;
+
+	int nrinfos;
+	sampleinfo_t *sampleinfo;
 
 	int nrinsts;
 	insthdr_t *insthdr;
@@ -125,10 +128,11 @@ typedef struct __attribute__ ((packed)) {
 	uint16_t *presetbag;
 	int nrpgens;
 	genrec_t *presetgen;
+
+	int used_ram;
 } SFInfo;
 
-int open_soundfont(SFInfo *sf, char *path);
-void load_soundfont(FIL *fp, SFInfo *sf);
+int load_soundfont(SFInfo *sf, char *path);
 void free_soundfont(SFInfo *sf);
 
 #endif /* SOUNDFONT_H_ */

@@ -11,6 +11,7 @@
 #include "sound/emu8000/soundfont.h"
 
 UINT bytes;
+int used_ram;
 
 #define NEW(type, nums)	(type *)malloc(sizeof(type) * (nums))
 
@@ -19,12 +20,13 @@ UINT bytes;
 #define READW(var, fd)		f_read(fd, var, 2, &bytes)
 #define READDW(var, fd)		f_read(fd, var, 4, &bytes)
 #define READCHUNK(var, fd)	f_read(fd, var, 8, &bytes)
+#define READSTR(var,fd)		f_read(fd, var, 20, &bytes)
 
 static int getchunk(const char *id);
 static void process_chunk(int id, int s, SFInfo *sf, FIL *fd);
 static void load_preset_header(int size, SFInfo *sf, FIL *fd);
 static void load_inst_header(int size, SFInfo *sf, FIL *fd);
-static void load_bag(int size, FIL *fd, int *totalp, unsigned short **bufp);
+static void load_bag(int size, FIL *fd, int *totalp, uint16_t **bufp);
 static void load_gen(int size, FIL *fd, int *totalp, genrec_t **bufp);
 static void load_sample_info(int size, SFInfo *sf, FIL *fd);
 
@@ -45,36 +47,34 @@ enum {
 	SHDR_ID
 };
 
-void load_soundfont(FIL *fd, SFInfo *sf)
+int load_soundfont(SFInfo *sf, char *path)
 {
 	chunk_t chunk, subchunk;
+	FIL fd;
+	used_ram = 0;
 
-	f_lseek(fd, f_tell(fd) + 12); //RIFF, size, SFBK
+	if(f_open(&fd, path, FA_OPEN_EXISTING | FA_READ) != FR_OK)
+		return -1;
 
-	while(!f_eof(fd))
+	f_lseek(&fd, f_tell(&fd) + 12); //RIFF, size, SFBK
+
+	while(!f_eof(&fd))
 	{
-		READID(chunk.id, fd);
+		READID(chunk.id, &fd);
 		switch(getchunk(chunk.id))
 		{
 		case LIST_ID:
-			READDW(&chunk.size, fd);
-			READID(subchunk.id, fd);
-			process_chunk(getchunk(subchunk.id), chunk.size - 4, sf, fd);
+			READDW(&chunk.size, &fd);
+			READID(subchunk.id, &fd);
+			process_chunk(getchunk(subchunk.id), chunk.size - 4, sf, &fd);
 			break;
 		}
 	}
-}
 
-int open_soundfont(SFInfo *sf, char *path)
-{
-	FIL sbk_file;
-	if(f_open(&sbk_file, path, FA_OPEN_EXISTING | FA_READ) == FR_OK)
-	{
-		load_soundfont(&sbk_file, sf);
-		f_close(&sbk_file);
-	}else{
-		return -1;
-	}
+	sf->used_ram = used_ram + 40; //10 * 4-byte ints
+
+	f_close(&fd);
+
 	return 0;
 }
 
@@ -136,10 +136,11 @@ static void load_preset_header(int size, SFInfo *sf, FIL *fd)
 {
 	int i;
 	sf->nrpresets = size / 38;
+	used_ram += sf->nrpresets * sizeof(presethdr_t);
 	sf->presethdr = NEW(presethdr_t, sf->nrpresets);
 	for(i = 0; i < sf->nrpresets; i++)
 	{
-		f_lseek(fd, f_tell(fd) + 20); //Preset name
+		READSTR(sf->presethdr[i].name, fd); //f_lseek(fd, f_tell(fd) + 20); //Preset name
 		READW(&sf->presethdr[i].preset, fd);
 		READW(&sf->presethdr[i].bank, fd);
 		READW(&sf->presethdr[i].bagNdx, fd);
@@ -151,6 +152,7 @@ static void load_inst_header(int size, SFInfo *sf, FIL *fd)
 {
 	int i;
 	sf->nrinsts = size / 22;
+	used_ram += sf->nrinsts * sizeof(insthdr_t);
 	sf->insthdr = NEW(insthdr_t, sf->nrinsts);
 	for(i = 0; i < sf->nrinsts; i++)
 	{
@@ -159,12 +161,13 @@ static void load_inst_header(int size, SFInfo *sf, FIL *fd)
 	}
 }
 
-static void load_bag(int size, FIL *fd, int *totalp, unsigned short **bufp)
+static void load_bag(int size, FIL *fd, int *totalp, uint16_t **bufp)
 {
-	unsigned short *buf;
+	uint16_t *buf;
 	int i;
 	size /= 4;
-	buf = NEW(unsigned short, size);
+	used_ram += size * sizeof(uint16_t);
+	buf = NEW(uint16_t, size);
 	for(i = 0; i < size; i++)
 	{
 		READW(&buf[i], fd);
@@ -179,6 +182,7 @@ static void load_gen(int size, FIL *fd, int *totalp, genrec_t **bufp)
 	genrec_t *buf;
 	int i;
 	size /= 4;
+	used_ram += size * sizeof(genrec_t);
 	buf = NEW(genrec_t, size);
 	for(i = 0; i < size; i++)
 	{
@@ -195,7 +199,7 @@ static void load_sample_info(int size, SFInfo *sf, FIL *fd)
 
 	sf->nrinfos = size / 46;
 	sf->sampleinfo = NEW(sampleinfo_t, sf->nrinfos);
-
+	used_ram += sf->nrinfos * sizeof(sampleinfo_t);
 	for(i = 0; i < sf->nrinfos; i++)
 	{
 		f_lseek(fd, f_tell(fd) + 20); //Sample names

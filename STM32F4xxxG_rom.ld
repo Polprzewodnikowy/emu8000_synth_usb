@@ -32,8 +32,8 @@ OUTPUT_ARCH(arm);
 /* Handler mode (core exceptions / interrupts) can use only main stack */
 /* Thread mode can use main stack (default) or process stack - selected in CONTROL special register */
 
-__main_stack_size = 12288;
-__process_stack_size = 2048;
+__main_stack_size = 8192;
+__process_stack_size = 8192;
 
 PROVIDE(__main_stack_size = __main_stack_size);
 PROVIDE(__process_stack_size = __process_stack_size);
@@ -195,6 +195,14 @@ SECTIONS
 		__bss_end = .;
 		PROVIDE(__bss_end = __bss_end);
 	} > ram AT > ram
+	
+	. = ALIGN(4);
+	__heap_start = .;
+	PROVIDE(__heap_start = __heap_start);
+
+	. = ALIGN(4);
+	__heap_end = __ram_end;
+	PROVIDE(__heap_end = __heap_end);
 
 	.stack :
 	{
@@ -225,16 +233,7 @@ SECTIONS
 		. = ALIGN(8);
 		__stack_end = .;
 		PROVIDE(__stack_end = __stack_end);
-/*	} > ccm_ram AT > ccm_ram */
-	} > ram AT > ram
-
-	. = ALIGN(4);
-	__heap_start = .;
-	PROVIDE(__heap_start = __heap_start);
-
-	. = ALIGN(4);
-	__heap_end = __ram_end;
-	PROVIDE(__heap_end = __heap_end);
+	} > ccm_ram AT > ccm_ram
 
 	.stab 				0 (NOLOAD) : { *(.stab) }
 	.stabstr 			0 (NOLOAD) : { *(.stabstr) }

@@ -11,14 +11,14 @@
 #include "sound/emu8000/emu8000.h"
 #include "sound/emu8000/soundfont.h"
 
-typedef struct {
+typedef struct __attribute__ ((packed)) {
 	uint8_t cc[128];
 	uint8_t program;
 	uint16_t pitch;
 	int presetnr;
 } midi_ch_t;
 
-typedef struct {
+typedef struct __attribute__ ((packed)) {
 	uint16_t set[End_Oper];
 	_Bool ovr[End_Oper];
 } enumerators_t;

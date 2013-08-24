@@ -652,6 +652,7 @@ void all_notes_off(uint8_t ch)
 			voice[i].exclusive_class = 0;
 		}
 	}
+	reset_all_controllers(ch);
 }
 
 void reset_all_controllers(uint8_t ch)

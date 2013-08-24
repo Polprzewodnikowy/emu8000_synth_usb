@@ -21,7 +21,7 @@
 #define STATE_RELEASED	(1<<2)
 #define STATE_OFF		(1<<3)
 
-typedef struct {
+typedef struct __attribute__ ((packed)) {
 	uint32_t start_address;
 	uint32_t loop_start;
 	uint32_t loop_end;
@@ -60,7 +60,7 @@ typedef struct {
 	uint8_t lfo2_vibrato;
 } emu8000_reg_t;
 
-typedef struct {
+typedef struct __attribute__ ((packed)) {
 	emu8000_reg_t reg;
 	uint8_t state;
 	uint8_t ch;
